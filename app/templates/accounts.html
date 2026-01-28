@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Accounts - Email Alerter{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Gmail Accounts</h1>
+        {% if can_add_more %}
+            <a href="{{ url_for('auth.connect') }}"
+               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">
+                + Connect Account
+            </a>
+        {% else %}
+            <span class="text-sm text-gray-500">Maximum 3 accounts</span>
+        {% endif %}
+    </div>
+
+    <!-- Active Accounts -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Active Accounts ({{ active_accounts|length }}/3)</h2>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% if active_accounts %}
+                {% for account in active_accounts %}
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-medium text-gray-900">{{ account.email }}</div>
+                            {% if account.display_name %}
+                                <div class="text-sm text-gray-500">{{ account.display_name }}</div>
+                            {% endif %}
+                            <div class="text-xs text-gray-400 mt-1">
+                                Connected: {{ account.created_at.strftime('%Y-%m-%d') }}
+                                {% if account.last_check %}
+                                    | Last check: {{ account.last_check.strftime('%Y-%m-%d %H:%M') }} UTC
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                            <form action="{{ url_for('auth.disconnect', account_id=account.id) }}" method="POST" class="inline">
+                                <button type="submit"
+                                        onclick="return confirm('Disconnect this account? You can reconnect it later.')"
+                                        class="text-sm text-gray-500 hover:text-red-600">
+                                    Disconnect
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="px-6 py-8 text-center text-gray-500">
+                    <p>No accounts connected yet.</p>
+                    <a href="{{ url_for('auth.connect') }}" class="mt-2 inline-block text-blue-600 hover:underline">
+                        Connect your first Gmail account
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Inactive Accounts -->
+    {% if inactive_accounts %}
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Disconnected Accounts</h2>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for account in inactive_accounts %}
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-medium text-gray-500">{{ account.email }}</div>
+                        <div class="text-xs text-gray-400 mt-1">
+                            Disconnected
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('auth.connect') }}" class="text-sm text-blue-600 hover:underline">
+                            Reconnect
+                        </a>
+                        <form action="{{ url_for('auth.delete', account_id=account.id) }}" method="POST" class="inline">
+                            <button type="submit"
+                                    onclick="return confirm('Permanently delete this account and all its data? This cannot be undone.')"
+                                    class="text-sm text-red-600 hover:text-red-800">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Setup Instructions -->
+    <div class="bg-blue-50 rounded-lg p-6">
+        <h3 class="font-semibold text-blue-900 mb-2">Setup Instructions</h3>
+        <ol class="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+            <li>Click "Connect Account" to authorize access to your Gmail</li>
+            <li>Sign in with your Google account and grant permissions</li>
+            <li>Repeat for up to 3 Gmail accounts</li>
+            <li>The system will check for new emails every 15 minutes</li>
+            <li>Important emails will trigger a Pushover notification</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

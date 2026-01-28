@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Email Alerter{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles */
+        .importance-high { background-color: #fef2f2; border-left: 4px solid #ef4444; }
+        .importance-medium { background-color: #fffbeb; border-left: 4px solid #f59e0b; }
+        .importance-low { background-color: #f0fdf4; border-left: 4px solid #22c55e; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    {% include "components/nav.html" %}
+
+    <main class="container mx-auto px-4 py-8 max-w-6xl">
+        {% include "components/alerts.html" %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="text-center text-gray-500 text-sm py-4">
+        <p>Important Email Alerter - Powered by Claude AI</p>
+    </footer>
+
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert-dismissible').forEach(el => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            });
+        }, 5000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

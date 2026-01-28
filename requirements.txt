@@ -1,0 +1,26 @@
+# Flask web framework
+flask>=3.0.0
+gunicorn>=21.0.0
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Google APIs
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-api-python-client>=2.0.0
+
+# Anthropic Claude
+anthropic>=0.18.0
+
+# HTTP client for Pushover
+httpx>=0.27.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.0.0

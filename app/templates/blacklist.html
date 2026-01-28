@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Blacklist - Email Alerter{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Sender Blacklist</h1>
+        <span class="text-sm text-gray-500">{{ total_count }} entries</span>
+    </div>
+
+    <!-- Add Form -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add to Blacklist</h2>
+        <form action="{{ url_for('blacklist.add') }}" method="POST" class="space-y-4">
+            <div class="flex flex-col md:flex-row gap-4">
+                <select name="entry_type" class="border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500">
+                    <option value="email">Email Address</option>
+                    <option value="domain">Domain</option>
+                </select>
+                <input type="text" name="value"
+                       placeholder="e.g., spam@company.com or spammy.com"
+                       class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500"
+                       required>
+                <input type="text" name="notes"
+                       placeholder="Notes (optional)"
+                       class="md:w-48 border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500">
+                <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition">
+                    Block
+                </button>
+            </div>
+        </form>
+
+        <!-- Bulk Add -->
+        <details class="mt-4">
+            <summary class="cursor-pointer text-sm text-red-600 hover:underline">Bulk add multiple entries</summary>
+            <form action="{{ url_for('blacklist.bulk_add') }}" method="POST" class="mt-4 space-y-4">
+                <div class="flex gap-4">
+                    <select name="entry_type" class="border border-gray-300 rounded-md px-3 py-2">
+                        <option value="email">Emails</option>
+                        <option value="domain">Domains</option>
+                    </select>
+                    <textarea name="values" rows="3"
+                              placeholder="Enter one per line or comma-separated"
+                              class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                    <button type="submit" class="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition self-start">
+                        Bulk Add
+                    </button>
+                </div>
+            </form>
+        </details>
+    </div>
+
+    <!-- Email Entries -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Blocked Email Addresses ({{ email_entries|length }})</h2>
+        </div>
+        {% if email_entries %}
+        <div class="divide-y divide-gray-200">
+            {% for entry in email_entries %}
+            <div class="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
+                <div>
+                    <span class="font-mono text-sm text-red-700">{{ entry.value }}</span>
+                    {% if entry.notes %}
+                        <span class="text-gray-500 text-sm ml-2">- {{ entry.notes }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs text-gray-400">{{ entry.created_at.strftime('%Y-%m-%d') }}</span>
+                    <form action="{{ url_for('blacklist.delete', entry_id=entry.id) }}" method="POST">
+                        <button type="submit" class="text-green-600 hover:text-green-800 text-sm">Unblock</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="px-6 py-8 text-center text-gray-500">
+            No email addresses blacklisted yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Domain Entries -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Blocked Domains ({{ domain_entries|length }})</h2>
+            <p class="text-sm text-gray-500 mt-1">All emails from these domains will be completely ignored</p>
+        </div>
+        {% if domain_entries %}
+        <div class="divide-y divide-gray-200">
+            {% for entry in domain_entries %}
+            <div class="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
+                <div>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mr-2">
+                        @{{ entry.value }}
+                    </span>
+                    {% if entry.notes %}
+                        <span class="text-gray-500 text-sm">{{ entry.notes }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs text-gray-400">{{ entry.created_at.strftime('%Y-%m-%d') }}</span>
+                    <form action="{{ url_for('blacklist.delete', entry_id=entry.id) }}" method="POST">
+                        <button type="submit" class="text-green-600 hover:text-green-800 text-sm">Unblock</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="px-6 py-8 text-center text-gray-500">
+            No domains blacklisted yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Help -->
+    <div class="bg-red-50 rounded-lg p-6">
+        <h3 class="font-semibold text-gray-900 mb-2">How the Blacklist Works</h3>
+        <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+            <li><strong>Email addresses:</strong> Exact match - emails from this specific address are always ignored</li>
+            <li><strong>Domains:</strong> All emails from @domain.com are ignored (e.g., anyone@spammy.com)</li>
+            <li>Blacklisted senders are completely skipped - no AI analysis, no notifications</li>
+            <li>Use this for newsletters or senders that sometimes score high but aren't important to you</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+# Environment
+.env
+.venv
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# Local development
+*.db
+*.sqlite
+instance/
+
+# OS
+.DS_Store
+Thumbs.db
+._*
+.AppleDouble
+.LSOverride
+
+# Credentials (never commit these!)
+credentials.json
+token.json
+*.pem
+*.key
