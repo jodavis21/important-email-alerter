@@ -4,7 +4,9 @@ import logging
 
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
+from ..config import get_config
 from ..models.whitelist import WhitelistEntry
+from ..services.whitelist_parser import parse_whitelist_input
 
 logger = logging.getLogger(__name__)
 
@@ -35,62 +37,69 @@ def index():
 
 @whitelist_bp.route("/add", methods=["POST"])
 def add():
-    """Add a new whitelist entry."""
-    entry_type = request.form.get("entry_type", "email")
-    value = request.form.get("value", "").strip().lower()
+    """Add a new whitelist entry using AI to parse natural language input."""
+    raw_value = request.form.get("value", "").strip()
     notes = request.form.get("notes", "").strip()
 
     # Validate
-    if not value:
+    if not raw_value:
         flash("Please enter an email address or domain.", "error")
         return redirect(url_for("whitelist.index"))
 
-    if entry_type not in ("email", "domain"):
-        flash("Invalid entry type.", "error")
+    # Use AI to parse the input and extract emails/domains
+    config = get_config()
+    parsed_entries = parse_whitelist_input(config.ANTHROPIC_API_KEY, raw_value)
+
+    if not parsed_entries:
+        flash("Could not parse any valid emails or domains from input.", "error")
         return redirect(url_for("whitelist.index"))
 
-    # Clean up domain (remove @ if present)
-    if entry_type == "domain" and value.startswith("@"):
-        value = value[1:]
+    added = 0
+    skipped = 0
 
-    # Validate email format
-    if entry_type == "email" and "@" not in value:
-        flash("Please enter a valid email address.", "error")
-        return redirect(url_for("whitelist.index"))
+    for parsed in parsed_entries:
+        entry_type = parsed.entry_type
+        value = parsed.value
 
-    # Check for duplicate
-    existing = (
-        g.db.query(WhitelistEntry)
-        .filter(
-            WhitelistEntry.entry_type == entry_type,
-            WhitelistEntry.value == value,
+        # Check for duplicate
+        existing = (
+            g.db.query(WhitelistEntry)
+            .filter(
+                WhitelistEntry.entry_type == entry_type,
+                WhitelistEntry.value == value,
+            )
+            .first()
         )
-        .first()
-    )
 
-    if existing:
-        if existing.is_active:
-            flash(f"'{value}' is already in the whitelist.", "warning")
-        else:
-            # Reactivate
-            existing.is_active = True
-            existing.notes = notes or existing.notes
-            g.db.commit()
-            flash(f"Reactivated '{value}' in whitelist.", "success")
-            logger.info(f"Reactivated whitelist entry: {entry_type}:{value}")
-        return redirect(url_for("whitelist.index"))
+        if existing:
+            if existing.is_active:
+                skipped += 1
+            else:
+                # Reactivate
+                existing.is_active = True
+                existing.notes = notes or existing.notes
+                g.db.commit()
+                flash(f"Reactivated '{value}' in whitelist.", "success")
+                logger.info(f"Reactivated whitelist entry: {entry_type}:{value}")
+                added += 1
+            continue
 
-    # Create new entry
-    entry = WhitelistEntry(
-        entry_type=entry_type,
-        value=value,
-        notes=notes or None,
-    )
-    g.db.add(entry)
+        # Create new entry
+        entry = WhitelistEntry(
+            entry_type=entry_type,
+            value=value,
+            notes=notes or None,
+        )
+        g.db.add(entry)
+        added += 1
+        logger.info(f"Added whitelist entry: {entry_type}:{value}")
+
     g.db.commit()
 
-    flash(f"Added '{value}' to whitelist.", "success")
-    logger.info(f"Added whitelist entry: {entry_type}:{value}")
+    if added:
+        flash(f"Added {added} {'entry' if added == 1 else 'entries'} to whitelist.", "success")
+    if skipped:
+        flash(f"Skipped {skipped} duplicate or invalid {'entry' if skipped == 1 else 'entries'}.", "warning")
 
     return redirect(url_for("whitelist.index"))
 
@@ -129,32 +138,27 @@ def update(entry_id: int):
 
 @whitelist_bp.route("/bulk-add", methods=["POST"])
 def bulk_add():
-    """Add multiple whitelist entries at once."""
-    entry_type = request.form.get("entry_type", "email")
+    """Add multiple whitelist entries at once using AI to parse natural language."""
     values_text = request.form.get("values", "").strip()
 
     if not values_text:
         flash("Please enter at least one value.", "error")
         return redirect(url_for("whitelist.index"))
 
-    # Parse values (one per line or comma-separated)
-    values = []
-    for line in values_text.replace(",", "\n").split("\n"):
-        value = line.strip().lower()
-        if value:
-            # Clean up domain
-            if entry_type == "domain" and value.startswith("@"):
-                value = value[1:]
-            values.append(value)
+    # Use AI to parse the input and extract emails/domains
+    config = get_config()
+    parsed_entries = parse_whitelist_input(config.ANTHROPIC_API_KEY, values_text)
+
+    if not parsed_entries:
+        flash("Could not parse any valid emails or domains from input.", "error")
+        return redirect(url_for("whitelist.index"))
 
     added = 0
     skipped = 0
 
-    for value in values:
-        # Skip invalid emails
-        if entry_type == "email" and "@" not in value:
-            skipped += 1
-            continue
+    for parsed in parsed_entries:
+        entry_type = parsed.entry_type
+        value = parsed.value
 
         # Check for duplicate
         existing = (

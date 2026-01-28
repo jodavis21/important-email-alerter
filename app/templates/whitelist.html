@@ -11,14 +11,11 @@
     <!-- Add Form -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Add to Whitelist</h2>
+        <p class="text-sm text-gray-600 mb-4">Use natural language - AI will extract emails and domains automatically.</p>
         <form action="{{ url_for('whitelist.add') }}" method="POST" class="space-y-4">
             <div class="flex flex-col md:flex-row gap-4">
-                <select name="entry_type" class="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="email">Email Address</option>
-                    <option value="domain">Domain</option>
-                </select>
                 <input type="text" name="value"
-                       placeholder="e.g., boss@company.com or company.com"
+                       placeholder="e.g., 'john@acme.com and anyone from bi-scs.com'"
                        class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                        required>
                 <input type="text" name="notes"
@@ -35,12 +32,8 @@
             <summary class="cursor-pointer text-sm text-blue-600 hover:underline">Bulk add multiple entries</summary>
             <form action="{{ url_for('whitelist.bulk_add') }}" method="POST" class="mt-4 space-y-4">
                 <div class="flex gap-4">
-                    <select name="entry_type" class="border border-gray-300 rounded-md px-3 py-2">
-                        <option value="email">Emails</option>
-                        <option value="domain">Domains</option>
-                    </select>
                     <textarea name="values" rows="3"
-                              placeholder="Enter one per line or comma-separated"
+                              placeholder="Describe what to whitelist, e.g., 'Trust emails from amazon.com, ups.com, and my colleague jane@work.org'"
                               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                     <button type="submit" class="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-700 transition self-start">
                         Bulk Add
@@ -119,6 +112,7 @@
     <div class="bg-gray-50 rounded-lg p-6">
         <h3 class="font-semibold text-gray-900 mb-2">How the Whitelist Works</h3>
         <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+            <li><strong>AI-powered input:</strong> Just describe what to whitelist in plain language - the AI will figure out the emails and domains</li>
             <li><strong>Email addresses:</strong> Exact match - only emails from this specific address get boosted</li>
             <li><strong>Domains:</strong> All emails from @domain.com get boosted (e.g., anyone@company.com)</li>
             <li>Whitelisted senders get a +15% boost to their importance score</li>
