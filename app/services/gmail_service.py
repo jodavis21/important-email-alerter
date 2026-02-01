@@ -119,14 +119,17 @@ class GmailService:
         return emails, new_history_id
 
     def _fetch_recent_emails(self, max_results: int) -> list[EmailMessage]:
-        """Fetch recent unread emails from inbox."""
+        """Fetch recent emails from inbox (including read emails from last 24 hours)."""
         try:
+            # Fetch all inbox emails from last 24 hours (not just unread)
+            # This ensures we don't miss emails that were read quickly
             results = (
                 self.service.users()
                 .messages()
                 .list(
                     userId="me",
-                    labelIds=["INBOX", "UNREAD"],
+                    labelIds=["INBOX"],
+                    q="newer_than:1d",  # Last 24 hours
                     maxResults=max_results,
                 )
                 .execute()
