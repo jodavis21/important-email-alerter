@@ -153,9 +153,10 @@ Return JSON with score (0.0-1.0), reason, category, suggested_action, and deadli
             # Get base score
             score = float(result.get("score", 0.5))
 
-            # Boost score for whitelisted senders
+            # Whitelisted senders always trigger notifications
+            # Set minimum score to 0.7 (importance threshold) for guaranteed notification
             if is_whitelisted:
-                score = min(1.0, score + 0.15)  # Slight boost for trusted senders
+                score = max(score, 0.7)  # Ensure whitelisted emails always reach importance threshold
 
             # Apply learned adjustments from user feedback
             if self.db_session:
@@ -195,11 +196,11 @@ Return JSON with score (0.0-1.0), reason, category, suggested_action, and deadli
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Claude response: {e}")
             logger.error(f"Response was: {response_text}")
-            # Default to medium importance on parse failure
+            # Default to medium importance on parse failure, but whitelisted senders get important status
             return ImportanceAnalysis(
-                score=0.5 if not is_whitelisted else 0.65,
+                score=0.5 if not is_whitelisted else 0.7,
                 reason="Analysis parsing failed - manual review recommended",
-                category="normal",
+                category="important" if is_whitelisted else "normal",
                 suggested_action="Manual review recommended",
             )
         except anthropic.APIError as e:
