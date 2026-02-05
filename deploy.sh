@@ -2,7 +2,7 @@
 # Deploy Important Email Alerter to Google Cloud Run
 
 # Configuration - UPDATE THESE VALUES
-PROJECT_ID="your-project-id"  # Your Google Cloud project ID
+PROJECT_ID="email-alerter-485621"  # Your Google Cloud project ID
 REGION="us-central1"          # Cloud Run region
 SERVICE_NAME="email-alerter"  # Cloud Run service name
 
